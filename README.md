@@ -1,47 +1,76 @@
-![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
+# n8n-nodes-deno-code
 
-# n8n-nodes-starter
+This is an n8n community node. It lets you use <a href="https://deno.com/">Deno</a> in your n8n workflows.
 
-This repo contains example nodes to help you get started building your own custom integrations for [n8n](n8n.io). It includes the node linter and other dependencies.
+Deno is the open-source JavaScript runtime for the modern web. Built on web standards with zero-config TypeScript, unmatched security, and a complete built-in toolchain, Deno is the easiest, most productive way to JavaScript.
 
-To make your custom node available to the community, you must create it as an npm package, and [submit it to the npm registry](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry).
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-## Prerequisites
+[Installation](#installation)  
+[Operations](#operations)   
+[Compatibility](#compatibility)  
+[Usage](#usage)  <!-- delete if not using this section -->  
+[Resources](#resources)
 
-You need the following installed on your development machine:
+## Installation
 
-* [git](https://git-scm.com/downloads)
-* Node.js and npm. Minimum version Node 16. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
-	```
-	npm install n8n -g
-	```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
+## Operations
 
-## Using this starter
+* Execute TypeScript code in Deno runtime
+* Allows you to import any of thousands of Deno and npm libraries
+* Support modes like in [Code node](https://docs.n8n.io/code/code-node/): "Run Once for All Items" or "Run Once for Each Item"
+* Support Sequential or Parallel execution for input items
+* Support Deno [Permissions](https://docs.deno.com/runtime/manual/basics/permissions)
 
-These are the basic steps for working with the starter. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
+## Compatibility
 
-1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
-2. Clone your new repo:
-    ```
-    git clone https://github.com/<your organization>/<your-repo-name>.git
-    ```
-3. Run `npm i` to install dependencies.
-4. Open the project in your editor.
-5. Browse the examples in `/nodes` and `/credentials`. Modify the examples, or replace them with your own nodes.
-6. Update the `package.json` to match your details.
-7. Run `npm run lint` to check for errors or `npm run lintfix` to automatically fix errors when possible.
-8. Test your node locally. Refer to [Run your node locally](https://docs.n8n.io/integrations/creating-nodes/test/run-node-locally/) for guidance.
-9. Replace this README with documentation for your node. Use the [README_TEMPLATE](README_TEMPLATE.md) to get started.
-10. Update the LICENSE file to use your details.
-11. [Publish](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry) your package to npm.
+* Tested against n8n version: 1.37.3
+* Tested against Deno version: 1.42.4
 
-## More information
+## Usage
 
-Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/creating-nodes/) for detailed information on building your own nodes.
+Generate id with [nanoid | Deno](https://deno.land/x/nanoid/mod.ts)
 
-## License
+```typescript
+const { nanoid } = await import("https://deno.land/x/nanoid@v3.0.0/mod.ts");
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+return {
+  id: nanoid()
+}
+```
+![use_nanoid.png](./assets/use_nanoid.png)
+
+Slugify blog title with [slug | Deno](https://deno.land/x/slug/mod.ts)
+```typescript
+const { slug } = await import("https://deno.land/x/slug@v1.1.0/mod.ts");
+
+return {
+  ...$json,
+  slug: slug($json.title),
+}
+```
+![use_slug.png](./assets/use_slug.png)
+
+Generate mock data with [deno_mock | Deno](https://deno.land/x/deno_mock/mod.ts)
+```typescript
+const Mock = (await import("https://deno.land/x/deno_mock@v2.0.0/mod.ts")).default;
+
+var tpl = {
+  "list|1-4": [{
+    "id|+1": 1,
+    "email": "@EMAIL",
+  }],
+};
+
+return Mock.mock(tpl).list;
+```
+![use_deno_mock.png](./assets/use_deno_mock.png)
+
+## Resources
+
+* [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
+* [Deno, the next-generation JavaScript runtime](https://deno.com/)
+* [kt3k/deno-bin: Use Deno via npm](https://github.com/kt3k/deno-bin)
+* [casual-simulation/node-deno-vm: A VM module for Node.js that utilizes the secure environment provided by Deno](https://github.com/casual-simulation/node-deno-vm)

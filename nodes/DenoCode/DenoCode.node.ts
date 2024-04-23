@@ -21,7 +21,6 @@ enum CodeProcessingMode {
 	parallel = 'parallel',
 }
 
-// TODO: Использовать что-то строковое, что не переполнится
 let workerCommandIndex = 0;
 const commands = new Map<typeof workerCommandIndex, any>();
 
