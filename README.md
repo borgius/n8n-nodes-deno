@@ -33,7 +33,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ### Docker 
 
-Deno code Node is not working in the original [n8nio/n8n - Docker Image](https://hub.docker.com/r/n8nio/n8n).
+Deno code Node does not work in the original [n8nio/n8n - Docker Image](https://hub.docker.com/r/n8nio/n8n).
 
 The libraries required for Deno need to be installed in the container. 
 
@@ -55,6 +55,8 @@ COPY --from=cc --chown=root:root --chmod=755 /lib/ld-linux-* /lib/
 RUN mkdir -p /lib64 \
     && ln -sf /usr/local/lib/ld-linux-* /lib64/ \
     && rm -f /usr/local/lib/libgcc_s.so.1
+
+ENV LD_LIBRARY_PATH="/usr/local/lib"
 
 USER node
 ```

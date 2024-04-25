@@ -14,4 +14,6 @@ RUN mkdir -p /lib64 \
     && ln -sf /usr/local/lib/ld-linux-* /lib64/ \
     && rm -f /usr/local/lib/libgcc_s.so.1
 
+ENV LD_LIBRARY_PATH="/usr/local/lib"
+
 USER node
