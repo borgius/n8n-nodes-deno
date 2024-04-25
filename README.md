@@ -1,5 +1,7 @@
 # n8n-nodes-deno-code
 
+![cover.png](./assets/cover.png)
+
 This is an n8n community node. It lets you use <a href="https://deno.com/">Deno</a> in your n8n workflows.
 
 Deno is the open-source JavaScript runtime for the modern web. Built on web standards with zero-config TypeScript, unmatched security, and a complete built-in toolchain, Deno is the easiest, most productive way to JavaScript.
