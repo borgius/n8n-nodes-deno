@@ -7,8 +7,10 @@ import {
 	INodeTypeDescription,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { DenoWorker, DenoWorkerOptions } from 'deno-vm';
+import { DenoWorker, DenoWorkerOptions } from '@chudnyi/deno-vm';
 import { createHash } from 'crypto';
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 
 enum CodeExecutionMode {
 	runOnceForAllItems = 'runOnceForAllItems',
@@ -21,20 +23,77 @@ enum CodeProcessingMode {
 	parallel = 'parallel',
 }
 
-let workerCommandIndex = 0;
-const commands = new Map<typeof workerCommandIndex, any>();
+interface ICommand {
+	uid: number;
+	resolve: (_: any) => any;
+	reject: (_: any) => any;
+}
 
-function nextCommandIndex() {
-	let next = workerCommandIndex;
-	do {
-		next++;
-		if (next === Number.MAX_VALUE) {
-			next = 0;
-		}
-	} while (commands.has(next));
+class DenoCodeWorker extends DenoWorker {
+	private workerCommandIndex = 0;
+	private commands = new Map<number, ICommand>();
 
-	workerCommandIndex = next;
-	return next;
+	constructor(script: string | URL, options: Partial<DenoWorkerOptions>) {
+		super(script, options);
+
+		this.onmessage = (e) => {
+			const { uid, result, error } = e.data;
+			const command = this.commands.get(uid);
+			this.commands.delete(uid);
+			if (error) {
+				command?.reject(error);
+			} else {
+				command?.resolve(result);
+			}
+		};
+		// TODO: Write log
+		this.onexit = (code, signal) => {
+			// console.log(`[${description.name}] Deno worker onexit, code: ${code}`);
+			// Reject all awaiting commands
+			this.commands.forEach((command, uid) => {
+				command.reject(
+					new Error(`Deno worker terminated or failed to start, code: ${code}, signal: ${signal}`),
+				);
+			});
+			this.commands.clear();
+		};
+
+	}
+
+	private nextCommandIndex() {
+		let next = this.workerCommandIndex;
+		do {
+			next++;
+			if (next === Number.MAX_VALUE) {
+				next = 0;
+			}
+		} while (this.commands.has(next));
+
+		this.workerCommandIndex = next;
+		return next;
+	}
+
+	public async  executeCommand(data: any) {
+		const command: ICommand = {
+			uid: this.nextCommandIndex(),
+			resolve: (_: any) => {},
+			reject: (_: any) => {},
+		};
+
+		this.commands.set(command.uid, command);
+
+		const promise = new Promise<any>((resolve, reject) => {
+			command.resolve = resolve;
+			command.reject = reject;
+		});
+
+		this.postMessage({
+			uid: command.uid,
+			data,
+		});
+
+		return promise;
+	}
 }
 
 function createWorker(denoTypeScriptCode: string, options: Partial<DenoWorkerOptions>) {
@@ -84,46 +143,21 @@ self.onmessage = async (e) => {
 	});
 };
 `;
-	const worker = new DenoWorker(script, options);
 
-	worker.onmessage = (e) => {
-		const { uid, result, error } = e.data;
-		const command = commands.get(uid);
-		commands.delete(uid);
-		if (error) {
-			command.reject(error);
-		} else {
-			command.resolve(result);
-		}
-	};
-	worker.onexit = (code, signal) => {
-		// Logger.info(`[${description.name}] Deno worker onexit, code: ${code}`);
-	};
+	let denoPath = require.resolve('deno-bin/package.json');
+	denoPath = join(denoPath, '..', 'bin', 'deno');
+	// console.log(`[${description.name}] Use Deno executable: ${denoPath}`);
+	if(!existsSync(denoPath)) {
+		// eslint-disable-next-line n8n-nodes-base/node-execute-block-wrong-error-thrown
+		throw new Error(`Not found Deno executable by path: ${denoPath}`)
+	}
 
-	return worker;
+	return new DenoCodeWorker(script, {
+		...options,
+		denoExecutable: denoPath,
+	});
 }
 
-async function executeCommand(worker: DenoWorker, data: any) {
-	const command = {
-		uid: nextCommandIndex(),
-		resolve: (_: any) => {},
-		reject: (_: any) => {},
-	};
-
-	commands.set(command.uid, command);
-
-	const promise = new Promise<any>((resolve, reject) => {
-		command.resolve = resolve;
-		command.reject = reject;
-	});
-
-	worker.postMessage({
-		uid: command.uid,
-		data,
-	});
-
-	return promise;
-}
 
 function hash(data: IDataObject) {
 	return createHash('sha1').update(JSON.stringify(data)).digest('base64');
@@ -131,7 +165,7 @@ function hash(data: IDataObject) {
 
 type NodeId = string;
 interface WorkerInfo {
-	worker: DenoWorker;
+	worker: DenoCodeWorker;
 	scriptHash: string;
 }
 
@@ -146,6 +180,7 @@ function getWorker(nodeId: NodeId, script: string, options: Partial<DenoWorkerOp
 		info.worker.closeSocket();
 		info = undefined;
 		workers.delete(nodeId);
+		// TODO: Write log
 		// Logger.info(`[${description.name}] Deno worker dropped, node: ${nodeId}`);
 	}
 	if (!info) {
@@ -154,6 +189,7 @@ function getWorker(nodeId: NodeId, script: string, options: Partial<DenoWorkerOp
 			worker: createWorker(script, options),
 		};
 		workers.set(nodeId, info);
+		// TODO: Write log
 		// Logger.info(`[${description.name}] Deno worker created, node: ${nodeId}`);
 	}
 
@@ -241,9 +277,9 @@ const permissionsProperty: INodeProperties = {
 					name: 'name',
 					type: 'options',
 					description: 'Select permission from the list',
-					// default: 'allowNet',
 					default: 'allowAll',
 					placeholder: '',
+					noDataExpression: true,
 					options: [
 						{
 							name: 'Allow All',
@@ -324,81 +360,104 @@ export class DenoCode implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		// const workflowMode = this.getMode();
+		const node = this.getNode();
 		const nodeMode = this.getNodeParameter(modeProperty.name, 0) as CodeExecutionMode;
 		const processing = this.getNodeParameter(processingProperty.name, 0);
 		const tsCode = this.getNodeParameter(tsCodeProperty.name, 0, '') as string;
 		const permissionsParams = this.getNodeParameter(permissionsProperty.name, 0, '') as IDataObject;
 		const permissions = createPermissions(permissionsParams);
-		const node = this.getNode();
-		const worker = getWorker(node.id, tsCode, { permissions });
+		const inputItems = this.getInputData();
+		const resultItems: INodeExecutionData[] = [];
 
-		const items = this.getInputData();
-		const executionData: INodeExecutionData[] = [];
+		let worker: DenoCodeWorker;
+		try {
+			try {
+				worker = getWorker(node.id, tsCode, { permissions });
+			} catch (error) {
+				throw new NodeOperationError(node, `Failed to create Deno worker: ${error.message}`);
+			}
 
-		if (nodeMode === CodeExecutionMode.runOnceForEachItem) {
-			const runOnceForEachItem = async (
-				item: INodeExecutionData,
-				itemIndex: number,
-			): Promise<INodeExecutionData> => {
-				const data = item?.json;
+			// runOnceForEachItem
+			if (nodeMode === CodeExecutionMode.runOnceForEachItem) {
+				const runOnceForEachItem = async (
+					item: INodeExecutionData,
+					itemIndex: number,
+				): Promise<INodeExecutionData> => {
+					const data = item?.json;
 
-				try {
-					const result = await executeCommand(worker!, data);
-					return {
-						json: result,
-						pairedItem: itemIndex,
-					};
-				} catch (error) {
-					if (this.continueOnFail()) {
-						return { json: data, error, pairedItem: itemIndex };
+					try {
+						const result = await worker?.executeCommand(data);
+						return {
+							json: result,
+							pairedItem: itemIndex,
+						};
+					} catch (error) {
+						if (this.continueOnFail()) {
+							return { json: data, error, pairedItem: itemIndex };
+						}
+						if (error.context) {
+							error.context.itemIndex = itemIndex;
+							throw error;
+						}
+						throw new NodeOperationError(node, error, {
+							itemIndex,
+						});
 					}
-					if (error.context) {
-						error.context.itemIndex = itemIndex;
-						throw error;
-					}
-					throw new NodeOperationError(this.getNode(), error, {
-						itemIndex,
-					});
-				}
-			};
+				};
 
-			if (processing === CodeProcessingMode.sequential) {
-				for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-					const item = items[itemIndex];
-					const result = await runOnceForEachItem(item, itemIndex);
-					executionData.push(result);
+				// Sequential
+				if (processing === CodeProcessingMode.sequential) {
+					for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex++) {
+						const item = inputItems[itemIndex];
+						const result = await runOnceForEachItem(item, itemIndex);
+						resultItems.push(result);
+					}
 				}
-			} else if (processing === CodeProcessingMode.parallel) {
-				const results = await Promise.all(items.map(runOnceForEachItem));
-				executionData.push(...results);
-			} else {
+				// Parallel
+				else if (processing === CodeProcessingMode.parallel) {
+					const results = await Promise.all(inputItems.map(runOnceForEachItem));
+					resultItems.push(...results);
+				}
+				// Unknown
+				else {
+					throw new NodeOperationError(
+						node,
+						`Unknown "${processingProperty.displayName}" property value: ${processing}`,
+					);
+				}
+			}
+			// runOnceForAllItems
+			else if (nodeMode === CodeExecutionMode.runOnceForAllItems) {
+				const runOnceForAllItems = async (): Promise<INodeExecutionData[]> => {
+					try {
+						const data = inputItems.map((item) => item.json);
+						const result = await worker!.executeCommand(data);
+						return this.helpers.returnJsonArray(result);
+					} catch (error) {
+						const nodeError = new NodeOperationError(node, error);
+						if (this.continueOnFail()) {
+							return this.helpers.returnJsonArray({ json: { error: nodeError } });
+						}
+						throw nodeError;
+					}
+				};
+				resultItems.push(...(await runOnceForAllItems()));
+			}
+			// Unknown
+			else {
 				throw new NodeOperationError(
 					node,
-					`Unknown "${processingProperty.displayName}" property value: ${processing}`,
+					`Unknown "${modeProperty.displayName}" property value: ${nodeMode}`,
 				);
 			}
-		} else if (nodeMode === CodeExecutionMode.runOnceForAllItems) {
-			const runOnceForAllItems = async (): Promise<INodeExecutionData[]> => {
-				try {
-					const data = items.map((item) => item.json);
-					const result = await executeCommand(worker!, data);
-					return this.helpers.returnJsonArray(result);
-				} catch (error) {
-					const nodeError = new NodeOperationError(node, error);
-					if (this.continueOnFail()) {
-						return this.helpers.returnJsonArray({ json: { error: nodeError } });
-					}
-					throw nodeError;
-				}
-			};
-			executionData.push(...(await runOnceForAllItems()));
-		} else {
-			throw new NodeOperationError(
-				node,
-				`Unknown "${modeProperty.displayName}" property value: ${nodeMode}`,
-			);
+		} catch (error) {
+			if (this.continueOnFail()) {
+				resultItems.push(...this.helpers.returnJsonArray({ json: { error } }));
+			} else {
+				throw error;
+			}
 		}
 
-		return this.prepareOutputData(executionData);
+		return this.prepareOutputData(resultItems);
 	}
 }

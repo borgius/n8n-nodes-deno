@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-deno-code",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "n8n node for Deno - JavaScript, TypeScript, and WebAssembly runtime with secure defaults and a great developer experience https://deno.com/",
   "keywords": [
     "n8n-community-node-package"
@@ -17,16 +17,22 @@
   },
   "main": "index.js",
   "scripts": {
+    "clean": "rimraf dist",
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
     "format": "prettier nodes --write",
     "lint": "eslint nodes package.json",
     "lintfix": "eslint nodes package.json --fix",
-    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
-    "n8n:start": "n8n start -o"
+    "prepublishOnly": "npm run clean && npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
+    "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno-code --legacy-peer-deps",
+    "dev:start": "n8n start -o",
+    "dev:publish:dry-run": "npm run dev:publish -- --dry-run",
+    "dev:publish": "npm publish --tag dev",
+    "dev:unpublish": "npm unpublish n8n-nodes-deno-code@$(node --print 'require(`./package.json`).version')"
   },
   "files": [
-    "dist"
+    "dist/nodes/DenoCode/deno.svg",
+    "dist/nodes/DenoCode/DenoCode.node.js"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
@@ -43,10 +49,11 @@
     "n8n-core": "*",
     "n8n-workflow": "*",
     "prettier": "^2.7.1",
-    "typescript": "~4.8.4"
+    "rimraf": "5.0.5",
+    "typescript": "4.8.4"
   },
   "dependencies": {
-    "deno-bin": "1.42.4",
-    "deno-vm": "0.12.0"
+    "@chudnyi/deno-vm": "0.12.0",
+    "deno-bin": "1.42.4"
   }
 }
