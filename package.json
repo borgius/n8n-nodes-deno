@@ -15,6 +15,9 @@
     "type": "git",
     "url": "https://github.com/chudnyi/n8n-nodes-deno-code.git"
   },
+  "engines": {
+    "node": "18"
+  },
   "main": "index.js",
   "scripts": {
     "clean": "rimraf dist",
@@ -25,7 +28,7 @@
     "lintfix": "eslint nodes package.json --fix",
     "prepublishOnly": "npm run clean && npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
     "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno-code --legacy-peer-deps",
-    "dev:start": "n8n start -o",
+    "dev:start": "pkgx +node@18 -- n8n start -o",
     "dev:publish:dry-run": "npm run dev:publish -- --dry-run",
     "dev:publish": "npm publish --tag dev",
     "dev:unpublish": "npm unpublish n8n-nodes-deno-code@$(node --print 'require(`./package.json`).version')"
