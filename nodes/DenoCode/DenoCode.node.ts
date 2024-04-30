@@ -249,7 +249,7 @@ const tsCodeProperty: INodeProperties = {
 		editorLanguage: 'javaScript',
 		alwaysOpenEditWindow: true,
 	},
-	noDataExpression: true,
+	noDataExpression: false,
 	default: '',
 	placeholder: 'Deno code',
 	description:
@@ -363,20 +363,13 @@ export class DenoCode implements INodeType {
 		const node = this.getNode();
 		const nodeMode = this.getNodeParameter(modeProperty.name, 0) as CodeExecutionMode;
 		const processing = this.getNodeParameter(processingProperty.name, 0);
-		const tsCode = this.getNodeParameter(tsCodeProperty.name, 0, '') as string;
+
 		const permissionsParams = this.getNodeParameter(permissionsProperty.name, 0, '') as IDataObject;
 		const permissions = createPermissions(permissionsParams);
 		const inputItems = this.getInputData();
 		const resultItems: INodeExecutionData[] = [];
 
-		let worker: DenoCodeWorker;
 		try {
-			try {
-				worker = getWorker(node.id, tsCode, { permissions });
-			} catch (error) {
-				throw new NodeOperationError(node, `Failed to create Deno worker: ${error.message}`);
-			}
-
 			// runOnceForEachItem
 			if (nodeMode === CodeExecutionMode.runOnceForEachItem) {
 				const runOnceForEachItem = async (
@@ -386,6 +379,8 @@ export class DenoCode implements INodeType {
 					const data = item?.json;
 
 					try {
+						const tsCode = this.getNodeParameter(tsCodeProperty.name, itemIndex) as string;
+						const worker = getWorker(node.id, tsCode, { permissions });
 						const result = await worker?.executeCommand(data);
 						return {
 							json: result,
@@ -431,6 +426,8 @@ export class DenoCode implements INodeType {
 				const runOnceForAllItems = async (): Promise<INodeExecutionData[]> => {
 					try {
 						const data = inputItems.map((item) => item.json);
+						const tsCode = this.getNodeParameter(tsCodeProperty.name, 0) as string;
+						const worker = getWorker(node.id, tsCode, { permissions });
 						const result = await worker!.executeCommand(data);
 						return this.helpers.returnJsonArray(result);
 					} catch (error) {
