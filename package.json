@@ -18,10 +18,11 @@
   "engines": {
     "node": "18"
   },
-  "main": "index.js",
+  "main": "",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "tsc && gulp build:icons",
+    "build": "tsc && gulp build:icons && npm run build:package",
+    "build:package": "tsx scripts/build-package-json.ts",
     "dev": "tsc --watch",
     "format": "prettier nodes --write",
     "lint": "eslint nodes package.json",
@@ -29,11 +30,11 @@
     "prepublishOnly": "npm run clean && npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
     "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno-code --legacy-peer-deps",
     "dev:start": "pkgx +node@18 -- n8n start -o",
-    "dev:publish:dry-run": "npm run dev:publish -- --dry-run",
-    "dev:publish": "npm publish --tag dev",
+    "dev:publish:dry-run": "cd dist && npm publish --dry-run",
+    "dev:publish": "cd dist && npm publish --tag dev",
     "dev:unpublish": "npm unpublish n8n-nodes-deno-code@$(node --print 'require(`./package.json`).version')",
     "release": "npm run version:sync && npm run version:changelog npm run version:commit && npm run version:tag",
-    "version:sync": "npm run build:const && npm install --package-lock-only",
+    "version:sync": "npm install --package-lock-only",
     "version:changelog": "npx conventional-changelog-cli -i CHANGELOG.md -s -p conventionalcommits -u",
     "version:commit": "git commit -am \"chore: release v$(npm pkg get version | jq -r)\"",
     "version:tag": "git tag -f \"v$(npm pkg get version | jq -r)\"",
@@ -60,6 +61,7 @@
     "n8n-workflow": "*",
     "prettier": "^2.7.1",
     "rimraf": "5.0.5",
+    "tsx": "4.10.0",
     "typescript": "4.8.4"
   },
   "dependencies": {
