@@ -1,3 +1,10 @@
+## [0.4.0](https://github.com/chudnyi/n8n-nodes-deno-code/compare/v0.3.1...v0.4.0) (2024-05-12)
+
+
+### Features
+
+* update deno version 1.43.3 ([dc6eef2](https://github.com/chudnyi/n8n-nodes-deno-code/commit/dc6eef244c1693a68a5615d566321675d97e1856))
+
 ## [0.3.1](https://github.com/chudnyi/n8n-nodes-deno-code/compare/v0.3.0...v0.3.1) (2024-05-12)
 
 ## [0.3.0](https://github.com/chudnyi/n8n-nodes-deno-code/compare/v0.2.0...v0.3.0) (2024-05-12)
