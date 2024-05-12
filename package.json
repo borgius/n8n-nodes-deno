@@ -67,6 +67,6 @@
   },
   "dependencies": {
     "@chudnyi/deno-vm": "0.12.0",
-    "deno-bin": "1.42.4"
+    "deno-bin": "1.43.3"
   }
 }
