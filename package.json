@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-deno-code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "n8n node for Deno - JavaScript, TypeScript, and WebAssembly runtime with secure defaults and a great developer experience https://deno.com/",
   "keywords": [
     "n8n-community-node-package", "deno", "n8n"
@@ -28,6 +28,7 @@
     "lint": "eslint nodes package.json",
     "lintfix": "eslint nodes package.json --fix",
     "prepublishOnly": "npm run clean && npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
+    "publish": "cd dist && npm publish",
     "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno-code --legacy-peer-deps",
     "dev:start": "pkgx +node@18 -- n8n start -o",
     "dev:publish:dry-run": "cd dist && npm publish --dry-run",
