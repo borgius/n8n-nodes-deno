@@ -5,9 +5,10 @@ import {
 	INodeProperties,
 	INodeType,
 	INodeTypeDescription,
+	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { DenoWorker, DenoWorkerOptions } from '@chudnyi/deno-vm';
+import { DenoWorker, DenoWorkerOptions } from 'borgius-deno-vm';
 import { createHash } from 'crypto';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -144,8 +145,10 @@ self.onmessage = async (e) => {
 };
 `;
 
-	let denoPath = require.resolve('deno-bin/package.json');
-	denoPath = join(denoPath, '..', 'bin', 'deno');
+	let denoPath = process.env.PATH?.split(':')
+		.map((dir) => join(dir, 'deno'))
+		.find((path) => existsSync(path)) || '/usr/bin/deno';
+
 	// console.log(`[${description.name}] Use Deno executable: ${denoPath}`);
 	if(!existsSync(denoPath)) {
 		// eslint-disable-next-line n8n-nodes-base/node-execute-block-wrong-error-thrown
@@ -247,7 +250,7 @@ const tsCodeProperty: INodeProperties = {
 		// rows: 10,
 		editor: 'codeNodeEditor',
 		editorLanguage: 'javaScript',
-		alwaysOpenEditWindow: true,
+		alwaysOpenEditWindow: false,
 	},
 	noDataExpression: false,
 	default: '',
@@ -317,6 +320,11 @@ const permissionsProperty: INodeProperties = {
 							value: 'allowWrite',
 							description: 'Whether to allow writing to the filesystem',
 						},
+						{
+							name: 'No NPM',
+							value: 'denoNoNPM',
+							description: 'Whether to prevent Deno from loading packages from npm',
+						},
 					],
 				},
 			],
@@ -332,11 +340,15 @@ function createPermissions(parameters: IDataObject): DenoWorkerOptionsPermission
 		return {};
 	}
 
+	const defaultPermissions = {
+		denoNoNPM: false,
+	};
+
 	return values.reduce((result, param) => {
 		const name = param['name'] as string;
 		result[name] = true;
 		return result;
-	}, {} as any);
+	}, defaultPermissions as any);
 }
 
 const description: INodeTypeDescription = {
@@ -349,8 +361,8 @@ const description: INodeTypeDescription = {
 	defaults: {
 		name: 'Deno',
 	},
-	inputs: ['main'],
-	outputs: ['main'],
+	inputs: ['main'] as NodeConnectionType[],
+	outputs: ['main'] as NodeConnectionType[],
 	parameterPane: 'wide',
 	properties: [modeProperty, processingProperty, tsCodeProperty, permissionsProperty],
 };

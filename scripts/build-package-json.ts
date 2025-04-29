@@ -1,6 +1,12 @@
 import { join } from 'node:path';
 import packageJson from '../package.json';
 import { writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+// Calculate the equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 (async () => {
 	const result: Partial<typeof packageJson> = packageJson;

@@ -1,19 +1,31 @@
 {
-  "name": "n8n-nodes-deno-code",
-  "version": "0.4.0",
+  "name": "n8n-nodes-deno",
+  "version": "0.4.2",
   "description": "n8n node for Deno - JavaScript, TypeScript, and WebAssembly runtime with secure defaults and a great developer experience https://deno.com/",
   "keywords": [
     "n8n-community-node-package", "deno", "n8n"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/chudnyi/n8n-nodes-deno-code",
+  "homepage": "https://github.com/borgius/n8n-nodes-deno",
   "author": {
     "name": "Dmitriy Chudnyi",
     "email": "dmitriy@chudnyi.com"
   },
+  "contributors": [
+    {
+      "name": "Viktor Borg",
+      "email": "868919+borgius@users.noreply.github.com",
+      "url": "https://github.com/borgius/n8n-nodes-deno.git"
+    },
+    {
+      "name": "Dmitriy Chudnyi",
+      "email": "dmitriy@chudnyi.com",
+      "url": "https://github.com/chudnyi/n8n-nodes-deno-code.git"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/chudnyi/n8n-nodes-deno-code.git"
+    "url": "https://github.com/borgius/n8n-nodes-deno.git"
   },
   "engines": {
     "node": "18"
@@ -29,8 +41,8 @@
     "lintfix": "eslint nodes package.json --fix",
     "prepublishOnly": "npm run clean && npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json",
     "publish": "cd dist && npm publish",
-    "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno-code --legacy-peer-deps",
-    "dev:start": "pkgx +node@18 -- n8n start -o",
+    "dev:install": "npm link && mkdir -p $HOME/.n8n/custom/nodes && cd $HOME/.n8n/custom/nodes && npm link n8n-nodes-deno --legacy-peer-deps",
+    "dev:start": "n8n start -o",
     "dev:publish:dry-run": "cd dist && npm publish --dry-run",
     "dev:publish": "cd dist && npm publish --tag dev",
     "dev:unpublish": "npm unpublish n8n-nodes-deno-code@$(node --print 'require(`./package.json`).version')",
@@ -58,7 +70,6 @@
     "conventional-changelog-cli": "4.1.0",
     "eslint-plugin-n8n-nodes-base": "^1.11.0",
     "gulp": "^4.0.2",
-    "n8n-core": "*",
     "n8n-workflow": "*",
     "prettier": "^2.7.1",
     "rimraf": "5.0.5",
@@ -66,7 +77,6 @@
     "typescript": "4.8.4"
   },
   "dependencies": {
-    "@chudnyi/deno-vm": "0.12.0",
-    "deno-bin": "1.43.3"
+    "borgius-deno-vm": "^0.13.0"
   }
 }

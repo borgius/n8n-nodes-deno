@@ -1,4 +1,4 @@
-# n8n-nodes-deno-code
+# n8n-nodes-deno
 
 ![cover.png](./assets/cover.png)
 
@@ -48,15 +48,7 @@ FROM n8nio/n8n:${N8N_VERSION}
 
 USER root
 
-# from: https://github.com/denoland/deno_docker/blob/4d61d7da8e7350ee31862d1a5e6268993f4dd1ff/alpine.dockerfile#L22
-COPY --from=cc --chown=root:root --chmod=755 /lib/*-linux-gnu/* /usr/local/lib/
-COPY --from=cc --chown=root:root --chmod=755 /lib/ld-linux-* /lib/
-
-RUN mkdir -p /lib64 \
-    && ln -sf /usr/local/lib/ld-linux-* /lib64/ \
-    && rm -f /usr/local/lib/libgcc_s.so.1
-
-ENV LD_LIBRARY_PATH="/usr/local/lib"
+RUN apk update && apk add deno
 
 USER node
 ```
@@ -104,5 +96,4 @@ return Mock.mock(tpl).list;
 
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
 * [Deno, the next-generation JavaScript runtime](https://deno.com/)
-* [kt3k/deno-bin: Use Deno via npm](https://github.com/kt3k/deno-bin)
 * [casual-simulation/node-deno-vm: A VM module for Node.js that utilizes the secure environment provided by Deno](https://github.com/casual-simulation/node-deno-vm)
