@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-deno",
-  "version": "0.4.2",
+  "version": "0.4.5",
   "description": "n8n node for Deno - JavaScript, TypeScript, and WebAssembly runtime with secure defaults and a great developer experience https://deno.com/",
   "keywords": [
     "n8n-community-node-package", "deno", "n8n"
@@ -26,9 +26,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/borgius/n8n-nodes-deno.git"
-  },
-  "engines": {
-    "node": "18"
   },
   "main": "",
   "scripts": {

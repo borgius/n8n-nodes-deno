@@ -320,16 +320,20 @@ const permissionsProperty: INodeProperties = {
 							value: 'allowWrite',
 							description: 'Whether to allow writing to the filesystem',
 						},
-						{
-							name: 'No NPM',
-							value: 'denoNoNPM',
-							description: 'Whether to prevent Deno from loading packages from npm',
-						},
 					],
 				},
 			],
 		},
 	],
+};
+
+const noNpmProperty: INodeProperties = {
+	displayName: '--no-npm',
+	name: 'noNpm',
+	type: 'boolean',
+	default: true,
+	description:
+		'Whether to configure Deno <a href="https://docs.deno.com/runtime/getting_started/command_line_interface/">CLI</a> options',
 };
 
 type DenoWorkerOptionsPermissions = DenoWorkerOptions['permissions'];
@@ -340,15 +344,11 @@ function createPermissions(parameters: IDataObject): DenoWorkerOptionsPermission
 		return {};
 	}
 
-	const defaultPermissions = {
-		denoNoNPM: false,
-	};
-
 	return values.reduce((result, param) => {
 		const name = param['name'] as string;
 		result[name] = true;
 		return result;
-	}, defaultPermissions as any);
+	}, {} as any);
 }
 
 const description: INodeTypeDescription = {
@@ -364,7 +364,7 @@ const description: INodeTypeDescription = {
 	inputs: ['main'] as NodeConnectionType[],
 	outputs: ['main'] as NodeConnectionType[],
 	parameterPane: 'wide',
-	properties: [modeProperty, processingProperty, tsCodeProperty, permissionsProperty],
+	properties: [modeProperty, processingProperty, tsCodeProperty, permissionsProperty, noNpmProperty],
 };
 
 export class DenoCode implements INodeType {
@@ -377,6 +377,7 @@ export class DenoCode implements INodeType {
 		const processing = this.getNodeParameter(processingProperty.name, 0);
 
 		const permissionsParams = this.getNodeParameter(permissionsProperty.name, 0, '') as IDataObject;
+		const denoNoNPM = this.getNodeParameter(noNpmProperty.name, 0, true) as boolean;
 		const permissions = createPermissions(permissionsParams);
 		const inputItems = this.getInputData();
 		const resultItems: INodeExecutionData[] = [];
@@ -392,7 +393,10 @@ export class DenoCode implements INodeType {
 
 					try {
 						const tsCode = this.getNodeParameter(tsCodeProperty.name, itemIndex) as string;
-						const worker = getWorker(node.id, tsCode, { permissions });
+						const worker = getWorker(node.id, tsCode, { 
+							denoNoNPM,
+							permissions
+						 });
 						const result = await worker?.executeCommand(data);
 						return {
 							json: result,

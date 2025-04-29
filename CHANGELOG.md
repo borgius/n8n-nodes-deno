@@ -1,3 +1,5 @@
+## [0.4.5](https://github.com/borgius/n8n-nodes-deno/compare/v0.4.2...v0.4.5) (2025-04-29)
+
 ## [0.4.2](https://github.com/borgius/n8n-nodes-deno/compare/v0.4.0...v0.4.2) (2025-04-29)
 
 ## [0.4.0](https://github.com/chudnyi/n8n-nodes-deno-code/compare/v0.3.1...v0.4.0) (2024-05-12)
